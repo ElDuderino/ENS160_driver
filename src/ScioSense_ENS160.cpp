@@ -59,9 +59,11 @@ bool ScioSense_ENS160::begin(bool debug, bool bootloader)
   
 	//init I2C
 	_i2c_init();
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.println("begin() - I2C init done");
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
   
 	this->_available = false;
@@ -80,6 +82,7 @@ bool ScioSense_ENS160::begin(bool debug, bool bootloader)
 		this->_available = this->clearCommand();
 		this->_available = this->getFirmware();
 	}
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		if (bootloader) {
 			Serial.println("ENS160 in bootloader mode"); 
@@ -87,6 +90,7 @@ bool ScioSense_ENS160::begin(bool debug, bool bootloader)
 			Serial.println("ENS160 in idle mode");	
 		}
 	}
+#endif
 	return this->_available;
 }
 
@@ -94,11 +98,12 @@ bool ScioSense_ENS160::begin(bool debug, bool bootloader)
 bool ScioSense_ENS160::reset(void) 
 {
 	uint8_t result = this->write8(_slaveaddr, ENS160_REG_OPMODE, ENS160_OPMODE_RESET);
-
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("reset() result: ");
 		Serial.println(result == 0 ? "ok" : "nok");
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 
 	return result == 0;
@@ -111,11 +116,12 @@ bool ScioSense_ENS160::checkPartID(void) {
 	
 	this->read(_slaveaddr, ENS160_REG_PART_ID, i2cbuf, 2);
 	part_id = i2cbuf[0] | ((uint16_t)i2cbuf[1] << 8);
-	
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("checkPartID() result: ");
 		Serial.println(part_id == ENS160_PARTID ? "ok" : "nok");
-	}	
+	}
+#endif	
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 	
 	return part_id == ENS160_PARTID;
@@ -128,17 +134,21 @@ bool ScioSense_ENS160::clearCommand(void) {
 	
 	result = this->write8(_slaveaddr, ENS160_REG_COMMAND, ENS160_COMMAND_NOP);
 	result = this->write8(_slaveaddr, ENS160_REG_COMMAND, ENS160_COMMAND_CLRGPR);
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("clearCommand() result: ");
 		Serial.println(result == 0 ? "ok" : "nok");
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 	
 	status = this->read8(_slaveaddr, ENS160_REG_DATA_STATUS);
+#ifdef ENS160_DEBUG
  	if (debugENS160) {
 		Serial.print("clearCommand() status: 0x");
 		Serial.println(status, HEX);
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 		
 	return result == 0;
@@ -159,7 +169,7 @@ bool ScioSense_ENS160::getFirmware() {
 	this->_fw_ver_major = i2cbuf[0];
 	this->_fw_ver_minor = i2cbuf[1];
 	this->_fw_ver_build = i2cbuf[2];
-
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.println(this->_fw_ver_major);
 		Serial.println(this->_fw_ver_minor);
@@ -167,6 +177,7 @@ bool ScioSense_ENS160::getFirmware() {
 		Serial.print("getFirmware() result: ");
 		Serial.println(result == 0 ? "ok" : "nok");
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 	
 	return result == 0;
@@ -178,11 +189,12 @@ bool ScioSense_ENS160::setMode(uint8_t mode) {
 	
 	result = this->write8(_slaveaddr, ENS160_REG_OPMODE, mode);
 
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("setMode() activate result: ");
 		Serial.println(result == 0 ? "ok" : "nok");
 	}
-
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 	
 	return result == 0;
@@ -211,11 +223,12 @@ bool ScioSense_ENS160::initCustomMode(uint16_t stepNum) {
 bool ScioSense_ENS160::addCustomStep(uint16_t time, bool measureHP0, bool measureHP1, bool measureHP2, bool measureHP3, uint16_t tempHP0, uint16_t tempHP1, uint16_t tempHP2, uint16_t tempHP3) {
 	uint8_t seq_ack;
 	uint8_t temp;
-
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("setCustomMode() write step ");
 		Serial.println(this->_stepCount);
 	}
+#endif
 	delay(ENS160_BOOTING);                   // Wait to boot after reset
 
 	temp = (uint8_t)(((time / 24)-1) << 6); 
@@ -260,19 +273,21 @@ bool ScioSense_ENS160::measure(bool waitForNew) {
 	uint8_t status;
 	bool newData = false;
 
+#ifdef ENS160_DEBUG
 	// Set default status for early bail out
 	if (debugENS160) Serial.println("Start measurement");
-	
+#endif
 	if (waitForNew) {
 		do {
 			delay(1);
 			status = this->read8(_slaveaddr, ENS160_REG_DATA_STATUS);
-			
+
+#ifdef ENS160_DEBUG		
 			if (debugENS160) {
 				Serial.print("Status: ");
 				Serial.println(status);
 			}
-			
+#endif
 		} while (!IS_NEW_DATA_AVAILABLE(status));
 	} else {
 		status = this->read8(_slaveaddr, ENS160_REG_DATA_STATUS);	
@@ -341,6 +356,7 @@ bool ScioSense_ENS160::set_envdata210(uint16_t t, uint16_t h) {
 	return result;
 }
 
+/**
 // Flash new firmware to sensor
 bool ScioSense_ENS160::flashFW(const uint8_t * app_img, int size) {
 	int error = 0;
@@ -412,12 +428,14 @@ bool ScioSense_ENS160::flashFW(const uint8_t * app_img, int size) {
    _slaveaddr = _slaveaddr_old;
    return true;
 }
+**/
 
 /**************************************************************************/
 
 void ScioSense_ENS160::_i2c_init() {
-	if (this->_sdaPin != this->_sclPin) Wire.begin(this->_sdaPin, this->_sclPin);
-	else Wire.begin();
+	//if (this->_sdaPin != this->_sclPin) Wire.begin(this->_sdaPin, this->_sclPin);
+	//else Wire.begin();
+	Wire.begin();
 }
 
 /**************************************************************************/
@@ -432,14 +450,14 @@ uint8_t ScioSense_ENS160::read8(uint8_t addr, byte reg) {
 uint8_t ScioSense_ENS160::read(uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t num) {
 	uint8_t pos = 0;
 	uint8_t result = 0;
-	
+#ifdef ENS160_DEBUG	
 	if (debugENS160) {
 		Serial.print("I2C read address: 0x");
 		Serial.print(addr, HEX);
 		Serial.print(" - register: 0x");
 		Serial.println(reg, HEX);
 	}
-	
+#endif
 	//on arduino we need to read in 32 byte chunks
 	while(pos < num){
 		
@@ -466,6 +484,7 @@ uint8_t ScioSense_ENS160::write8(uint8_t addr, byte reg, byte value) {
 }
 
 uint8_t ScioSense_ENS160::write(uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t num) {
+#ifdef ENS160_DEBUG
 	if (debugENS160) {
 		Serial.print("I2C write address: 0x");
 		Serial.print(addr, HEX);
@@ -478,7 +497,7 @@ uint8_t ScioSense_ENS160::write(uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t
 		}
 		Serial.println();
 	}
-	
+#endif
 	Wire.beginTransmission((uint8_t)addr);
 	Wire.write((uint8_t)reg);
 	Wire.write((uint8_t *)buf, num);
