@@ -27,6 +27,17 @@ It is assumed that
 - From the pop-up choose Download ZIP.
 - In Arduino IDE, select Sketch > Include Library > Manage Libraries ... and browse to the just downloaded ZIP file.
 - When the IDE is ready this README.md should be located at e.g. `C:\Users\sciosense\Documents\Arduino\libraries\ScioSense_ENS160\README.md`.
+- If you require debug statements, edit ScioSense_ENS160.h file and uncomment //#define ENS160_DEBUG 1
+- Compilation of a production sketch with and without conditional compilation:
+
+```
+Sketch uses 26714 bytes (82%) of program storage space. Maximum is 32256 bytes.
+Global variables use 1628 bytes (79%) of dynamic memory, leaving 420 bytes for local variables. Maximum is 2048 bytes.
+
+Sketch uses 25944 bytes (80%) of program storage space. Maximum is 32256 bytes.
+Global variables use 1350 bytes (65%) of dynamic memory, leaving 698 bytes for local variables. Maximum is 2048 bytes.
+```
+This version also has removed the flashFW function (not used in production)
 
 ## Build an example
 To build an example sketch
